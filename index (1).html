@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Grid Shield — Fraud Intelligence Layer</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #f8f9fb;
+    --white: #ffffff;
+    --surface2: #f1f4f8;
+    --border: #e2e8f0;
+    --border2: #cbd5e1;
+    --accent: #1a56db;
+    --accent-light: #eff3ff;
+    --accent2: #0d9488;
+    --accent2-light: #f0fdf9;
+    --danger: #dc2626;
+    --danger-light: #fef2f2;
+    --warn: #d97706;
+    --warn-light: #fffbeb;
+    --text: #0f172a;
+    --text2: #334155;
+    --muted: #64748b;
+    --font-head: 'Syne', sans-serif;
+    --font-body: 'Inter', sans-serif;
+    --radius: 10px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font-family:var(--font-body); min-height:100vh; overflow-x:hidden; font-size:15px; line-height:1.6; }
+
+  /* NAV */
+  nav { position:fixed; top:0; left:0; right:0; z-index:100; display:flex; align-items:center; justify-content:space-between; padding:0 40px; height:64px; background:#fff; border-bottom:1px solid var(--border); box-shadow:var(--shadow); }
+  .logo { font-family:var(--font-head); font-weight:800; font-size:1.25rem; color:var(--accent); display:flex; align-items:center; gap:10px; }
+  .logo-icon { width:32px; height:32px; background:var(--accent); color:#fff; border-radius:8px; display:grid; place-items:center; font-size:16px; }
+  nav ul { display:flex; list-style:none; gap:4px; }
+  nav ul li button { background:none; border:none; color:var(--muted); font-family:var(--font-body); font-size:0.875rem; font-weight:500; padding:8px 16px; border-radius:8px; cursor:pointer; transition:all 0.15s; }
+  nav ul li button:hover { background:var(--surface2); color:var(--text); }
+  nav ul li button.active { background:var(--accent-light); color:var(--accent); font-weight:600; }
+  .nav-badge { background:var(--danger); color:#fff; font-size:0.65rem; font-weight:700; padding:3px 10px; border-radius:20px; animation:pulse-badge 2s infinite; }
+  @keyframes pulse-badge { 0%,100%{opacity:1} 50%{opacity:0.6} }
+
+  /* PAGES */
+  .page { display:none; padding-top:64px; min-height:100vh; }
+  .page.active { display:block; }
+
+  /* HERO */
+  #hero { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:calc(100vh - 64px); text-align:center; padding:60px 40px; background:linear-gradient(180deg,#fff 0%,var(--bg) 100%); }
+  .hero-tag { display:inline-flex; align-items:center; gap:6px; font-size:0.8rem; font-weight:600; color:var(--accent); background:var(--accent-light); border:1px solid #c7d7fa; padding:6px 16px; border-radius:20px; margin-bottom:28px; animation:fadeUp 0.5s ease both; }
+  .hero-title { font-family:var(--font-head); font-size:clamp(2.4rem,6vw,4.5rem); font-weight:800; line-height:1.1; letter-spacing:-1.5px; color:var(--text); margin-bottom:20px; animation:fadeUp 0.5s 0.1s ease both; max-width:800px; }
+  .hero-title span { color:var(--accent); }
+  .hero-sub { max-width:580px; font-size:1.05rem; line-height:1.75; color:var(--text2); margin-bottom:40px; animation:fadeUp 0.5s 0.2s ease both; }
+  .hero-cta { display:flex; gap:12px; flex-wrap:wrap; justify-content:center; animation:fadeUp 0.5s 0.3s ease both; }
+  .btn-primary { background:var(--accent); color:#fff; border:none; font-family:var(--font-body); font-size:0.95rem; font-weight:600; padding:12px 28px; border-radius:var(--radius); cursor:pointer; transition:all 0.2s; box-shadow:0 2px 8px rgba(26,86,219,0.3); }
+  .btn-primary:hover { background:#1648c0; transform:translateY(-1px); }
+  .btn-secondary { background:#fff; color:var(--accent); border:1.5px solid var(--accent); font-family:var(--font-body); font-size:0.95rem; font-weight:600; padding:12px 28px; border-radius:var(--radius); cursor:pointer; transition:all 0.2s; }
+  .btn-secondary:hover { background:var(--accent-light); }
+  .hero-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-top:64px; width:100%; max-width:760px; animation:fadeUp 0.5s 0.4s ease both; }
+  .stat-box { background:#fff; padding:28px 20px; text-align:center; border-radius:var(--radius); border:1px solid var(--border); box-shadow:var(--shadow); }
+  .stat-val { font-family:var(--font-head); font-size:2.2rem; font-weight:800; color:var(--accent); letter-spacing:-1px; }
+  .stat-label { font-size:0.8rem; font-weight:500; color:var(--muted); margin-top:4px; }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+
+  /* LAYOUT */
+  .page-wrap { padding:32px 40px 48px; max-width:1400px; margin:0 auto; }
+  .page-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; }
+  .page-title { font-family:var(--font-head); font-size:1.5rem; font-weight:800; color:var(--text); }
+  .live-dot { display:flex; align-items:center; gap:6px; font-size:0.8rem; font-weight:600; color:var(--accent2); background:var(--accent2-light); padding:6px 12px; border-radius:20px; border:1px solid #99f6e4; }
+  .dot { width:7px; height:7px; border-radius:50%; background:var(--accent2); animation:blink 1.2s infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+
+  /* KPIs */
+  .kpi-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:24px; }
+  .kpi { background:#fff; padding:22px 20px; border-radius:var(--radius); border:1px solid var(--border); box-shadow:var(--shadow); border-left:4px solid transparent; }
+  .kpi.blue { border-left-color:var(--accent); }
+  .kpi.green { border-left-color:var(--accent2); }
+  .kpi.red { border-left-color:var(--danger); }
+  .kpi.yellow { border-left-color:var(--warn); }
+  .kpi-label { font-size:0.75rem; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; color:var(--muted); margin-bottom:8px; }
+  .kpi-val { font-family:var(--font-head); font-size:1.9rem; font-weight:800; letter-spacing:-0.5px; line-height:1; }
+  .kpi-val.red { color:var(--danger); }
+  .kpi-val.green { color:var(--accent2); }
+  .kpi-val.blue { color:var(--accent); }
+  .kpi-val.yellow { color:var(--warn); }
+  .kpi-delta { font-size:0.78rem; font-weight:500; color:var(--muted); margin-top:6px; }
+  .kpi-delta.up { color:var(--accent2); }
+  .kpi-delta.down { color:var(--danger); }
+
+  /* CARDS */
+  .card { background:#fff; border-radius:var(--radius); border:1px solid var(--border); box-shadow:var(--shadow); overflow:hidden; }
+  .card-header { padding:14px 20px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
+  .card-title { font-size:0.82rem; font-weight:700; color:var(--text); text-transform:uppercase; letter-spacing:0.5px; }
+  .card-badge { font-size:0.7rem; font-weight:700; padding:3px 10px; border-radius:20px; }
+  .badge-blue { background:var(--accent-light); color:var(--accent); }
+  .badge-red { background:var(--danger-light); color:var(--danger); }
+  .card-body { padding:20px; }
+
+  /* GRIDS */
+  .main-grid { display:grid; grid-template-columns:1fr 340px; gap:16px; margin-bottom:16px; }
+  .bottom-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; }
+
+  /* ALERTS */
+  .alert-list { display:flex; flex-direction:column; }
+  .alert-item { padding:13px 20px; display:flex; align-items:flex-start; gap:12px; cursor:pointer; transition:background 0.15s; border-bottom:1px solid var(--border); animation:slideIn 0.3s ease both; }
+  .alert-item:last-child { border-bottom:none; }
+  .alert-item:hover { background:var(--surface2); }
+  @keyframes slideIn { from{opacity:0;transform:translateX(10px)} to{opacity:1;transform:translateX(0)} }
+  .alert-sev { width:8px; height:8px; border-radius:50%; flex-shrink:0; margin-top:6px; }
+  .sev-critical { background:var(--danger); }
+  .sev-high { background:var(--warn); }
+  .sev-medium { background:var(--accent); }
+  .alert-body { flex:1; }
+  .alert-title { font-size:0.875rem; font-weight:600; color:var(--text); margin-bottom:2px; }
+  .alert-meta { font-size:0.78rem; color:var(--muted); }
+  .alert-score { font-size:0.82rem; font-weight:700; padding:2px 8px; border-radius:6px; }
+  .score-high { background:var(--danger-light); color:var(--danger); }
+  .score-mid { background:var(--warn-light); color:var(--warn); }
+
+  /* BARS */
+  .bar-chart { display:flex; align-items:flex-end; gap:3px; height:80px; margin-top:12px; }
+  .bar { flex:1; background:var(--accent); opacity:0.15; border-radius:3px 3px 0 0; transition:opacity 0.2s; }
+  .bar.active { opacity:0.75; }
+  .bar:hover { opacity:1; }
+
+  /* PLATFORMS TABLE */
+  .platforms-table { width:100%; border-collapse:collapse; }
+  .platforms-table th { font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; color:var(--muted); text-align:left; padding:8px 0; border-bottom:2px solid var(--border); }
+  .platforms-table td { font-size:0.85rem; padding:10px 0; border-bottom:1px solid var(--border); color:var(--text2); vertical-align:middle; }
+  .platforms-table tr:last-child td { border-bottom:none; }
+  .platform-dot { width:7px; height:7px; border-radius:50%; display:inline-block; margin-right:7px; }
+  .status-pill { font-size:0.7rem; font-weight:600; padding:3px 10px; border-radius:20px; }
+  .pill-ok { background:var(--accent2-light); color:var(--accent2); }
+  .pill-warn { background:var(--warn-light); color:var(--warn); }
+  .pill-alert { background:var(--danger-light); color:var(--danger); }
+
+  /* CANVASES */
+  #networkCanvas { width:100%; height:300px; display:block; }
+  #bigNetworkCanvas { width:100%; height:500px; display:block; }
+
+  /* NETWORK PAGE */
+  .network-layout { display:grid; grid-template-columns:1fr 300px; gap:16px; }
+  .network-legend { display:flex; gap:16px; flex-wrap:wrap; padding:12px 20px; border-top:1px solid var(--border); }
+  .legend-item { display:flex; align-items:center; gap:6px; font-size:0.78rem; font-weight:500; color:var(--text2); }
+  .legend-dot { width:10px; height:10px; border-radius:50%; }
+  .info-card { border:1px solid var(--border); border-radius:8px; padding:14px 16px; margin-bottom:8px; cursor:pointer; transition:all 0.15s; }
+  .info-card:hover { border-color:var(--accent); background:var(--accent-light); }
+  .info-card-title { font-size:0.875rem; font-weight:700; color:var(--text); margin-bottom:3px; }
+  .info-card-sub { font-size:0.8rem; color:var(--muted); line-height:1.5; }
+
+  /* API */
+  .api-layout { display:grid; grid-template-columns:260px 1fr; gap:16px; min-height:560px; }
+  .api-endpoint { padding:11px 14px; border-radius:8px; cursor:pointer; border:1px solid transparent; transition:all 0.15s; font-size:0.82rem; color:var(--text2); font-weight:500; background:#fff; margin-bottom:4px; }
+  .api-endpoint:hover { border-color:var(--border); background:var(--surface2); }
+  .api-endpoint.active { background:var(--accent-light); border-color:#c7d7fa; color:var(--accent); }
+  .method { font-size:0.65rem; font-weight:700; padding:2px 7px; border-radius:4px; margin-right:8px; }
+  .method-post { background:var(--accent-light); color:var(--accent); }
+  .method-get { background:var(--accent2-light); color:var(--accent2); }
+  .api-main { background:#fff; border-radius:var(--radius); border:1px solid var(--border); padding:28px; box-shadow:var(--shadow); }
+  .api-section-title { font-family:var(--font-head); font-size:1.15rem; font-weight:700; color:var(--text); margin-bottom:6px; }
+  .api-desc { font-size:0.875rem; color:var(--muted); margin-bottom:24px; line-height:1.65; }
+  .input-group { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px; }
+  .input-field { background:var(--bg); border:1.5px solid var(--border); color:var(--text); font-family:var(--font-body); font-size:0.875rem; padding:10px 13px; border-radius:8px; outline:none; transition:border-color 0.2s; width:100%; }
+  .input-field:focus { border-color:var(--accent); background:#fff; }
+  label.field-label { font-size:0.75rem; font-weight:600; color:var(--text2); display:block; margin-bottom:5px; }
+  .run-btn { background:var(--accent); color:#fff; border:none; font-family:var(--font-body); font-size:0.9rem; font-weight:600; padding:11px 26px; border-radius:8px; cursor:pointer; transition:all 0.2s; margin-bottom:22px; box-shadow:0 2px 6px rgba(26,86,219,0.25); }
+  .run-btn:hover { background:#1648c0; }
+  .run-btn:disabled { opacity:0.5; cursor:not-allowed; }
+  .code-block { background:#0f172a; border-radius:8px; padding:18px 20px; font-size:0.82rem; line-height:1.75; overflow-x:auto; color:#e2e8f0; }
+  .code-block pre { white-space:pre-wrap; word-break:break-all; font-family:'Courier New',monospace; }
+  .json-key { color:#93c5fd; }
+  .json-str { color:#86efac; }
+  .json-num { color:#fcd34d; }
+  .json-bool-true { color:#86efac; }
+  .json-bool-false { color:#fca5a5; }
+  .response-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+  .response-label { font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; color:var(--muted); }
+  .http-status { font-size:0.75rem; font-weight:700; padding:3px 10px; border-radius:6px; }
+  .status-200 { background:var(--accent2-light); color:var(--accent2); }
+  .status-loading { background:var(--accent-light); color:var(--accent); }
+  .resp-time { font-size:0.75rem; color:var(--muted); }
+  .risk-meter-wrap { background:var(--surface2); border-radius:8px; padding:14px 16px; margin-bottom:14px; }
+  .risk-label { display:flex; justify-content:space-between; font-size:0.78rem; font-weight:600; color:var(--text2); margin-bottom:8px; }
+  .risk-bar-bg { height:8px; background:var(--border); border-radius:4px; overflow:hidden; }
+  .risk-bar-fill { height:100%; border-radius:4px; transition:width 0.8s cubic-bezier(0.4,0,0.2,1),background 0.4s; width:0%; }
+  .auth-box { background:var(--surface2); border-radius:8px; padding:14px 16px; margin-top:16px; }
+
+  ::-webkit-scrollbar { width:6px; }
+  ::-webkit-scrollbar-track { background:var(--bg); }
+  ::-webkit-scrollbar-thumb { background:var(--border2); border-radius:3px; }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo"><div class="logo-icon">⬡</div>Grid Shield</div>
+  <ul>
+    <li><button onclick="showPage('home')" id="nav-home" class="active">Overview</button></li>
+    <li><button onclick="showPage('dashboard')" id="nav-dashboard">Dashboard</button></li>
+    <li><button onclick="showPage('network')" id="nav-network">Signal Network</button></li>
+    <li><button onclick="showPage('api-demo')" id="nav-api-demo">API Demo</button></li>
+    <li><span class="nav-badge">● LIVE</span></li>
+  </ul>
+</nav>
+
+<!-- HOME -->
+<section class="page active" id="home">
+  <div id="hero">
+    <div class="hero-tag">🛡 Fraud Intelligence Layer for the Internet</div>
+    <h1 class="hero-title">Stop Fraud<br/><span>Before It Spreads</span></h1>
+    <p class="hero-sub">Grid Shield is a real-time, cross-platform fraud intelligence network. We detect coordinated attacks that siloed systems miss — without sharing a single byte of raw user data.</p>
+    <div class="hero-cta">
+      <button class="btn-primary" onclick="showPage('dashboard')">View Live Dashboard →</button>
+      <button class="btn-secondary" onclick="showPage('api-demo')">Try the API</button>
+    </div>
+    <div class="hero-stats">
+      <div class="stat-box"><div class="stat-val" id="stat1">0</div><div class="stat-label">Transactions Analyzed / sec</div></div>
+      <div class="stat-box"><div class="stat-val" id="stat2">0%</div><div class="stat-label">Fraud Detection Uplift</div></div>
+      <div class="stat-box"><div class="stat-val" id="stat3">0ms</div><div class="stat-label">Avg. Response Time</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- DASHBOARD -->
+<section class="page" id="dashboard">
+  <div class="page-wrap">
+    <div class="page-header">
+      <div class="page-title">Fraud Intelligence Dashboard</div>
+      <div class="live-dot"><div class="dot"></div> Live Feed</div>
+    </div>
+    <div class="kpi-grid">
+      <div class="kpi blue"><div class="kpi-label">Platforms Connected</div><div class="kpi-val blue" id="kpi-platforms">14</div><div class="kpi-delta up">↑ 3 this week</div></div>
+      <div class="kpi red"><div class="kpi-label">Active Threats</div><div class="kpi-val red" id="kpi-threats">7</div><div class="kpi-delta down">↑ 2 in last hour</div></div>
+      <div class="kpi green"><div class="kpi-label">Fraud Blocked (24h)</div><div class="kpi-val green" id="kpi-blocked">$0</div><div class="kpi-delta up">↑ 18% vs yesterday</div></div>
+      <div class="kpi yellow"><div class="kpi-label">Risk Checks / min</div><div class="kpi-val yellow" id="kpi-checks">0</div><div class="kpi-delta up">↑ 24% this hour</div></div>
+    </div>
+    <div class="main-grid">
+      <div class="card">
+        <div class="card-header"><span class="card-title">Cross-Platform Signal Graph</span><span class="card-badge badge-blue">Real-Time</span></div>
+        <div style="padding:12px;"><canvas id="networkCanvas"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">Active Alerts</span><span class="card-badge badge-red">5 Active</span></div>
+        <div class="alert-list" id="alertList"></div>
+      </div>
+    </div>
+    <div class="bottom-grid">
+      <div class="card">
+        <div class="card-header"><span class="card-title">Transaction Volume (24h)</span></div>
+        <div class="card-body">
+          <div class="bar-chart" id="barChart"></div>
+          <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:0.72rem;color:var(--muted);"><span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>Now</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">Connected Platforms</span></div>
+        <div class="card-body"><table class="platforms-table"><thead><tr><th>Platform</th><th>Signals/s</th><th>Status</th></tr></thead><tbody id="platformTable"></tbody></table></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">Threat Breakdown</span></div>
+        <div class="card-body" id="threatBreakdown"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- NETWORK -->
+<section class="page" id="network">
+  <div class="page-wrap">
+    <div class="page-header">
+      <div class="page-title">Cross-Platform Signal Network</div>
+      <div class="live-dot"><div class="dot"></div> 14 Nodes Active</div>
+    </div>
+    <div class="network-layout">
+      <div class="card">
+        <div class="card-header"><span class="card-title">Live Intelligence Graph</span><span style="font-size:0.78rem;color:var(--muted);font-weight:500;">Click any node to inspect</span></div>
+        <div style="padding:12px;"><canvas id="bigNetworkCanvas"></canvas></div>
+        <div class="network-legend">
+          <div class="legend-item"><div class="legend-dot" style="background:#1a56db"></div> Platform Node</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#dc2626"></div> Fraud Actor</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#d97706"></div> Suspicious Entity</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#0d9488"></div> Verified Safe</div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Node Intelligence</span></div>
+          <div class="card-body" id="selectedNodeCard">
+            <div style="color:var(--muted);font-size:0.875rem;font-weight:500;">Select a Node</div>
+            <div style="font-size:0.8rem;color:var(--muted);margin-top:4px;line-height:1.5;">Click any node in the graph to view fraud signal details and cross-platform connections.</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Recent Cross-Platform Detections</span></div>
+          <div class="card-body" style="padding:12px 16px;" id="detectionList"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- API DEMO -->
+<section class="page" id="api-demo">
+  <div class="page-wrap">
+    <div class="page-header">
+      <div class="page-title">API Playground</div>
+      <div style="font-size:0.82rem;color:var(--muted);background:#fff;border:1px solid var(--border);padding:6px 14px;border-radius:8px;">Base URL: <strong style="color:var(--accent);">api.gridshield.io/v1</strong></div>
+    </div>
+    <div class="api-layout">
+      <div>
+        <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted);margin-bottom:10px;">Endpoints</div>
+        <div class="api-endpoint active" onclick="selectEndpoint('score',this)"><span class="method method-post">POST</span>/risk-score</div>
+        <div class="api-endpoint" onclick="selectEndpoint('check',this)"><span class="method method-post">POST</span>/device-check</div>
+        <div class="api-endpoint" onclick="selectEndpoint('network',this)"><span class="method method-get">GET</span>/network-graph</div>
+        <div class="api-endpoint" onclick="selectEndpoint('batch',this)"><span class="method method-post">POST</span>/batch-score</div>
+        <div class="auth-box">
+          <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted);margin-bottom:8px;">Authentication</div>
+          <div class="code-block" style="font-size:0.75rem;padding:10px 12px;"><pre><span class="json-key">X-API-Key</span>: gs_demo_****</pre></div>
+        </div>
+      </div>
+      <div class="api-main">
+        <div class="api-section-title" id="endpointTitle">POST /risk-score</div>
+        <div class="api-desc" id="endpointDesc">Analyze a user, transaction, or device against the Grid Shield network and receive a real-time fraud risk score with reasoning.</div>
+        <div id="inputSection">
+          <div class="input-group">
+            <div><label class="field-label">User ID</label><input class="input-field" id="userId" value="usr_8f3ka91x" /></div>
+            <div><label class="field-label">Transaction Amount ($)</label><input class="input-field" id="txAmount" value="2450.00" type="number" /></div>
+          </div>
+          <div class="input-group">
+            <div><label class="field-label">IP Address</label><input class="input-field" id="ipAddr" value="185.220.101.47" /></div>
+            <div><label class="field-label">Device Fingerprint</label><input class="input-field" id="deviceFp" value="fp_a9d3c21b" /></div>
+          </div>
+          <div style="margin-bottom:18px;">
+            <label class="field-label">Platform</label>
+            <select class="input-field" id="platform"><option>chime</option><option>ramp</option><option>brex</option><option>shopify-merchant</option><option>stripe-connect</option></select>
+          </div>
+        </div>
+        <button class="run-btn" onclick="runApiDemo()" id="runBtn">▶ Run Request</button>
+        <div class="response-header">
+          <span class="response-label">Response</span>
+          <div style="display:flex;align-items:center;gap:10px;"><span class="http-status" id="httpStatus">Waiting...</span><span class="resp-time" id="respTime"></span></div>
+        </div>
+        <div id="riskMeter" style="display:none;" class="risk-meter-wrap">
+          <div class="risk-label"><span>Risk Score</span><span id="riskScoreNum" style="font-weight:700;">0</span></div>
+          <div class="risk-bar-bg"><div class="risk-bar-fill" id="riskBarFill"></div></div>
+        </div>
+        <div class="code-block"><pre id="responseOutput">// Submit a request to see the API response</pre></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('nav ul li button').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  const btn = document.getElementById('nav-' + id);
+  if (btn) btn.classList.add('active');
+  if (id === 'network') setTimeout(initBigNetwork, 100);
+}
+
+function animateCounter(el, end, suffix, duration) {
+  let start = 0;
+  const step = end / (duration / 16);
+  const timer = setInterval(() => {
+    start = Math.min(start + step, end);
+    el.textContent = Math.floor(start).toLocaleString() + suffix;
+    if (start >= end) clearInterval(timer);
+  }, 16);
+}
+setTimeout(() => {
+  animateCounter(document.getElementById('stat1'), 3847, '', 1800);
+  animateCounter(document.getElementById('stat2'), 34, '%', 1600);
+  animateCounter(document.getElementById('stat3'), 12, 'ms', 1400);
+}, 400);
+
+let fraudBlocked = 128450, checksPerMin = 2340;
+function updateKPIs() {
+  fraudBlocked += Math.floor(Math.random() * 500 + 100);
+  checksPerMin = 2200 + Math.floor(Math.random() * 400);
+  document.getElementById('kpi-blocked').textContent = '$' + fraudBlocked.toLocaleString();
+  document.getElementById('kpi-checks').textContent = checksPerMin.toLocaleString();
+  document.getElementById('kpi-threats').textContent = 5 + Math.floor(Math.random() * 6);
+}
+setInterval(updateKPIs, 3000);
+updateKPIs();
+
+const barData = [22,18,14,11,9,12,28,40,55,62,58,65,70,68,72,66,61,74,80,85,90,87,95,100];
+const bc = document.getElementById('barChart');
+barData.forEach((v, i) => {
+  const b = document.createElement('div');
+  b.className = 'bar' + (i === barData.length - 1 ? ' active' : '');
+  b.style.height = v + '%';
+  bc.appendChild(b);
+});
+
+const alertData = [
+  { title: 'Synthetic Identity Ring', meta: 'Cross-platform: Chime → Ramp → Brex', score: 94, sev: 'critical' },
+  { title: 'Device Fingerprint Collision', meta: '3 accounts — same device hash detected', score: 87, sev: 'critical' },
+  { title: 'Velocity Abuse Pattern', meta: 'Shopify merchant — 42 rapid checks in 5 min', score: 76, sev: 'high' },
+  { title: 'Tor Exit Node Login', meta: 'High-risk IP: 185.220.101.47', score: 71, sev: 'high' },
+  { title: 'Coordinated Bot Activity', meta: '12 accounts created within 4 minutes', score: 63, sev: 'medium' },
+];
+const alertList = document.getElementById('alertList');
+alertData.forEach((a, i) => {
+  const el = document.createElement('div');
+  el.className = 'alert-item';
+  el.style.animationDelay = (i * 0.08) + 's';
+  el.innerHTML = `<div class="alert-sev sev-${a.sev}"></div><div class="alert-body"><div class="alert-title">${a.title}</div><div class="alert-meta">${a.meta}</div></div><div class="alert-score ${a.score > 80 ? 'score-high' : 'score-mid'}">${a.score}</div>`;
+  alertList.appendChild(el);
+});
+
+const platforms = [
+  { name: 'Chime', signals: 842, status: 'ok', color: '#1a56db' },
+  { name: 'Ramp', signals: 631, status: 'ok', color: '#0d9488' },
+  { name: 'Brex', signals: 509, status: 'warn', color: '#d97706' },
+  { name: 'Stripe', signals: 1204, status: 'ok', color: '#1a56db' },
+  { name: 'Shopify', signals: 387, status: 'alert', color: '#dc2626' },
+];
+const pt = document.getElementById('platformTable');
+platforms.forEach(p => {
+  const tr = document.createElement('tr');
+  tr.innerHTML = `<td><span class="platform-dot" style="background:${p.color}"></span>${p.name}</td><td style="font-weight:600;">${p.signals}</td><td><span class="status-pill pill-${p.status}">${p.status==='ok'?'Healthy':p.status==='warn'?'Warning':'Alert'}</span></td>`;
+  pt.appendChild(tr);
+});
+
+const threats = [
+  { label: 'Synthetic Identity', pct: 38, color: '#dc2626' },
+  { label: 'Account Takeover', pct: 27, color: '#d97706' },
+  { label: 'Bot / Credential Stuffing', pct: 19, color: '#1a56db' },
+  { label: 'Payment Fraud', pct: 16, color: '#0d9488' },
+];
+const tb = document.getElementById('threatBreakdown');
+threats.forEach(t => {
+  tb.innerHTML += `<div style="margin-bottom:16px;"><div style="display:flex;justify-content:space-between;font-size:0.82rem;font-weight:500;margin-bottom:6px;"><span style="color:var(--text2);">${t.label}</span><span style="color:${t.color};font-weight:700;">${t.pct}%</span></div><div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden;"><div style="height:100%;width:${t.pct}%;background:${t.color};border-radius:3px;transition:width 1s ease;"></div></div></div>`;
+});
+
+function drawMiniNetwork() {
+  const canvas = document.getElementById('networkCanvas');
+  if (!canvas) return;
+  canvas.width = canvas.offsetWidth * devicePixelRatio;
+  canvas.height = canvas.offsetHeight * devicePixelRatio;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(devicePixelRatio, devicePixelRatio);
+  const W = canvas.offsetWidth, H = canvas.offsetHeight;
+  const nodes = [
+    {x:W*.5,y:H*.5,r:14,color:'#1a56db',label:'Grid Shield'},
+    {x:W*.2,y:H*.22,r:9,color:'#0d9488',label:'Chime'},
+    {x:W*.78,y:H*.18,r:9,color:'#0d9488',label:'Ramp'},
+    {x:W*.14,y:H*.65,r:9,color:'#0d9488',label:'Brex'},
+    {x:W*.83,y:H*.68,r:9,color:'#d97706',label:'Stripe'},
+    {x:W*.5,y:H*.88,r:9,color:'#dc2626',label:'Shopify'},
+    {x:W*.35,y:H*.1,r:7,color:'#dc2626',label:'Fraud Ring A'},
+    {x:W*.66,y:H*.42,r:7,color:'#dc2626',label:'Fraud Ring B'},
+  ];
+  const edges = [[0,1],[0,2],[0,3],[0,4],[0,5],[1,6],[2,6],[3,6],[4,7],[5,7],[1,2],[3,5]];
+  edges.forEach(([a,b]) => {
+    const na=nodes[a],nb=nodes[b];
+    const isT=na.color==='#dc2626'||nb.color==='#dc2626';
+    ctx.beginPath(); ctx.strokeStyle=isT?'rgba(220,38,38,0.2)':'rgba(26,86,219,0.12)';
+    ctx.lineWidth=1; ctx.setLineDash(isT?[5,5]:[]);
+    ctx.moveTo(na.x,na.y); ctx.lineTo(nb.x,nb.y); ctx.stroke(); ctx.setLineDash([]);
+  });
+  const t=Date.now()/1000;
+  const pR=14+Math.sin(t*3)*7;
+  ctx.beginPath(); ctx.arc(nodes[0].x,nodes[0].y,pR,0,Math.PI*2);
+  ctx.strokeStyle='rgba(26,86,219,0.1)'; ctx.lineWidth=2; ctx.stroke();
+  nodes.forEach(n => {
+    ctx.beginPath(); ctx.arc(n.x,n.y,n.r,0,Math.PI*2);
+    ctx.fillStyle=n.color+'20'; ctx.fill();
+    ctx.strokeStyle=n.color; ctx.lineWidth=2; ctx.stroke();
+    ctx.fillStyle=n.color; ctx.font=`600 ${n.r>10?9:8}px Inter,sans-serif`;
+    ctx.textAlign='center'; ctx.fillText(n.label,n.x,n.y+n.r+13);
+  });
+  requestAnimationFrame(drawMiniNetwork);
+}
+drawMiniNetwork();
+
+let bigNodes=[], selectedNode=null;
+function initBigNetwork() {
+  const canvas=document.getElementById('bigNetworkCanvas');
+  if(!canvas||canvas._inited) return;
+  canvas._inited=true;
+  canvas.width=canvas.offsetWidth*devicePixelRatio;
+  canvas.height=canvas.offsetHeight*devicePixelRatio;
+  const ctx=canvas.getContext('2d');
+  ctx.scale(devicePixelRatio,devicePixelRatio);
+  const W=canvas.offsetWidth,H=canvas.offsetHeight;
+  bigNodes=[
+    {id:0,x:W*.5,y:H*.5,r:18,color:'#1a56db',label:'Grid Shield',info:'Central intelligence hub. Processes 3,847 signals/sec across all connected platforms.'},
+    {id:1,x:W*.2,y:H*.2,r:12,color:'#0d9488',label:'Chime',info:'Fintech platform. 842 signals/s. 2 active cross-platform threat links detected.'},
+    {id:2,x:W*.78,y:H*.18,r:12,color:'#0d9488',label:'Ramp',info:'Corporate expense platform. 631 signals/s. Cross-platform synthetic ID flagged.'},
+    {id:3,x:W*.14,y:H*.62,r:12,color:'#0d9488',label:'Brex',info:'Startup banking. 509 signals/s. Elevated velocity anomaly in last 30 min.'},
+    {id:4,x:W*.84,y:H*.65,r:12,color:'#d97706',label:'Stripe',info:'Payment processor. 1,204 signals/s. Under watchlist — coordinated bot pattern.'},
+    {id:5,x:W*.5,y:H*.88,r:12,color:'#dc2626',label:'Shopify',info:'⚠️ Alert: Merchant fraud ring detected. 387 signals/s. Risk score 94.'},
+    {id:6,x:W*.35,y:H*.1,r:8,color:'#dc2626',label:'Fraud Ring A',info:'Synthetic identity cluster. 14 accounts across Chime & Ramp. Device hash match confirmed.'},
+    {id:7,x:W*.65,y:H*.38,r:8,color:'#dc2626',label:'Fraud Ring B',info:'Credential stuffing bot network. Tor exit node 185.220.101.47. Blocked on 4 platforms.'},
+    {id:8,x:W*.28,y:H*.42,r:7,color:'#d97706',label:'Suspect A',info:'High-risk device. Appeared on 3 platforms within 12 min. Score: 71.'},
+    {id:9,x:W*.72,y:H*.78,r:7,color:'#d97706',label:'Suspect B',info:'Unusual transaction velocity. $12,400 across 6 accounts. Monitoring.'},
+    {id:10,x:W*.88,y:H*.38,r:7,color:'#0d9488',label:'Verified A',info:'Verified merchant. 1,200+ clean transactions. Trust score: 97.'},
+  ];
+  const bigEdges=[[0,1],[0,2],[0,3],[0,4],[0,5],[1,6],[2,6],[6,7],[3,8],[1,8],[4,7],[5,7],[4,9],[5,9],[2,10],[4,10]];
+  const dl=document.getElementById('detectionList');
+  [{p:'Chime → Ramp',type:'Synthetic Identity',time:'32s ago',color:'#dc2626'},{p:'Stripe → Shopify',type:'Bot Network',time:'1m ago',color:'#d97706'},{p:'Brex → Chime',type:'Device Collision',time:'4m ago',color:'#d97706'}].forEach(d=>{
+    dl.innerHTML+=`<div class="info-card"><div class="info-card-title" style="color:${d.color};">${d.type}</div><div class="info-card-sub">${d.p} — ${d.time}</div></div>`;
+  });
+  function drawBig() {
+    ctx.clearRect(0,0,W,H);
+    const t=Date.now()/1000;
+    bigEdges.forEach(([a,b])=>{
+      const na=bigNodes[a],nb=bigNodes[b];
+      const isR=na.color==='#dc2626'||nb.color==='#dc2626';
+      ctx.beginPath(); ctx.strokeStyle=isR?'rgba(220,38,38,0.18)':'rgba(26,86,219,0.1)';
+      ctx.lineWidth=isR?1.2:0.8; ctx.setLineDash(isR?[6,6]:[]);
+      ctx.moveTo(na.x,na.y); ctx.lineTo(nb.x,nb.y); ctx.stroke(); ctx.setLineDash([]);
+      if(!isR){
+        const prog=((t*0.4+a*0.3+b*0.2)%1);
+        const px=na.x+(nb.x-na.x)*prog,py=na.y+(nb.y-na.y)*prog;
+        ctx.beginPath(); ctx.arc(px,py,2.5,0,Math.PI*2);
+        ctx.fillStyle='rgba(26,86,219,0.5)'; ctx.fill();
+      }
+    });
+    const pR=18+Math.sin(t*2.5)*8;
+    ctx.beginPath(); ctx.arc(bigNodes[0].x,bigNodes[0].y,pR,0,Math.PI*2);
+    ctx.strokeStyle='rgba(26,86,219,0.08)'; ctx.lineWidth=3; ctx.stroke();
+    bigNodes.forEach(n=>{
+      const sel=selectedNode&&selectedNode.id===n.id;
+      if(sel){ctx.beginPath();ctx.arc(n.x,n.y,n.r+6,0,Math.PI*2);ctx.strokeStyle=n.color;ctx.lineWidth=1.5;ctx.setLineDash([4,4]);ctx.stroke();ctx.setLineDash([]);}
+      ctx.beginPath();ctx.arc(n.x,n.y,n.r,0,Math.PI*2);ctx.fillStyle=n.color+'20';ctx.fill();
+      ctx.strokeStyle=n.color;ctx.lineWidth=sel?2.5:1.8;ctx.stroke();
+      ctx.fillStyle=n.color;ctx.font=`600 9px Inter,sans-serif`;ctx.textAlign='center';
+      ctx.fillText(n.label,n.x,n.y+n.r+14);
+    });
+    requestAnimationFrame(drawBig);
+  }
+  drawBig();
+  canvas.addEventListener('click',e=>{
+    const rect=canvas.getBoundingClientRect();
+    const mx=e.clientX-rect.left,my=e.clientY-rect.top;
+    selectedNode=null;
+    bigNodes.forEach(n=>{if(Math.sqrt((mx-n.x)**2+(my-n.y)**2)<n.r+8)selectedNode=n;});
+    if(selectedNode){
+      document.getElementById('selectedNodeCard').innerHTML=`<div class="info-card-title" style="color:${selectedNode.color};margin-bottom:6px;">${selectedNode.label}</div><div class="info-card-sub">${selectedNode.info}</div>`;
+    }
+  });
+  canvas.addEventListener('mousemove',e=>{
+    const rect=canvas.getBoundingClientRect();
+    const mx=e.clientX-rect.left,my=e.clientY-rect.top;
+    let hit=false;
+    bigNodes.forEach(n=>{if(Math.sqrt((mx-n.x)**2+(my-n.y)**2)<n.r+8)hit=true;});
+    canvas.style.cursor=hit?'pointer':'default';
+  });
+}
+
+const endpointConfig={
+  score:{title:'POST /risk-score',desc:'Analyze a user, transaction, or device against the Grid Shield network and receive a real-time fraud risk score with reasoning.'},
+  check:{title:'POST /device-check',desc:'Cross-reference a device fingerprint against the network to detect multi-platform device reuse and abuse patterns.'},
+  network:{title:'GET /network-graph',desc:'Retrieve the current fraud graph for your platform, including linked accounts, threat vectors, and connection paths.'},
+  batch:{title:'POST /batch-score',desc:'Submit up to 1,000 entities for bulk fraud scoring. Ideal for onboarding flows and nightly risk sweeps.'},
+};
+function selectEndpoint(key,el){
+  document.querySelectorAll('.api-endpoint').forEach(e=>e.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('endpointTitle').textContent=endpointConfig[key].title;
+  document.getElementById('endpointDesc').textContent=endpointConfig[key].desc;
+  document.getElementById('responseOutput').textContent='// Submit a request to see the API response';
+  document.getElementById('httpStatus').textContent='Waiting...';
+  document.getElementById('httpStatus').className='http-status';
+  document.getElementById('riskMeter').style.display='none';
+  document.getElementById('respTime').textContent='';
+}
+function syntaxHighlight(json){
+  return json
+    .replace(/(".*?"):/g,'<span class="json-key">$1</span>:')
+    .replace(/: (".*?")/g,': <span class="json-str">$1</span>')
+    .replace(/: (true)/g,': <span class="json-bool-true">$1</span>')
+    .replace(/: (false)/g,': <span class="json-bool-false">$1</span>')
+    .replace(/: (\d+\.?\d*)/g,': <span class="json-num">$1</span>');
+}
+function runApiDemo(){
+  const btn=document.getElementById('runBtn');
+  btn.disabled=true; btn.textContent='⟳ Running...';
+  const status=document.getElementById('httpStatus');
+  status.textContent='Connecting...'; status.className='http-status status-loading';
+  document.getElementById('responseOutput').textContent='// Sending request to Grid Shield network...';
+  document.getElementById('riskMeter').style.display='none';
+  const userId=document.getElementById('userId').value||'usr_demo';
+  const amount=document.getElementById('txAmount').value||100;
+  const ip=document.getElementById('ipAddr').value||'0.0.0.0';
+  const fp=document.getElementById('deviceFp').value||'fp_demo';
+  const platform=document.getElementById('platform').value;
+  const isKnownBadIP=ip.startsWith('185.220')||ip.startsWith('10.0.0');
+  const riskScore=isKnownBadIP?(75+Math.floor(Math.random()*20)):(8+Math.floor(Math.random()*35));
+  const riskLevel=riskScore>75?'HIGH':riskScore>45?'MEDIUM':'LOW';
+  const riskColor=riskScore>75?'#dc2626':riskScore>45?'#d97706':'#0d9488';
+  setTimeout(()=>{
+    const latency=9+Math.floor(Math.random()*8);
+    const response={
+      "status":"ok",
+      "request_id":"req_"+Math.random().toString(36).substr(2,9),
+      "platform":platform,
+      "entity":{"user_id":userId,"device_fp":fp,"ip_address":ip,"amount":parseFloat(amount)},
+      "fraud_score":riskScore,
+      "risk_level":riskLevel,
+      "cross_platform_hits":isKnownBadIP?3:0,
+      "matched_on":isKnownBadIP?["chime","ramp"]:[],
+      "signals":{"ip_threat_intel":isKnownBadIP,"device_seen_elsewhere":isKnownBadIP,"velocity_anomaly":parseFloat(amount)>2000,"behavioral_match":false},
+      "reasoning":isKnownBadIP?["IP linked to Tor exit node","Device fingerprint matched on chime and ramp","Transaction amount above 95th percentile"]:["No cross-platform matches found","IP reputation clean","Behavioral pattern consistent with user history"],
+      "recommendation":riskScore>75?"BLOCK":riskScore>45?"REVIEW":"ALLOW",
+      "latency_ms":latency
+    };
+    status.textContent='200 OK'; status.className='http-status status-200';
+    document.getElementById('respTime').textContent=`${latency}ms`;
+    document.getElementById('responseOutput').innerHTML=syntaxHighlight(JSON.stringify(response,null,2));
+    const meter=document.getElementById('riskMeter');
+    meter.style.display='block';
+    document.getElementById('riskScoreNum').textContent=riskScore+' / 100';
+    document.getElementById('riskScoreNum').style.color=riskColor;
+    const fill=document.getElementById('riskBarFill');
+    fill.style.background=riskColor; fill.style.width='0%';
+    setTimeout(()=>{fill.style.width=riskScore+'%';},50);
+    btn.disabled=false; btn.textContent='▶ Run Request';
+  },900+Math.random()*400);
+}
+</script>
+</body>
+</html>
